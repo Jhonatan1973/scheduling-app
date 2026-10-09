@@ -152,13 +152,13 @@ CI (`.github/workflows/ci.yml`) runs build → unit → integration → E2E (Pla
 The repository contains a [Render Blueprint](render.yaml):
 
 1. Push to GitHub → Render dashboard → **New + › Blueprint** → select the repo.
-2. Render creates `scheduling-db` (PostgreSQL), `scheduling-app-api` and `scheduling-app-web` (Docker).
+2. Render asks for `ConnectionStrings__Database`: paste a PostgreSQL URL (free [Neon](https://neon.tech) database,
+   direct connection string). Then it creates `scheduling-app-api` and `scheduling-app-web` (Docker).
    If a service name is taken, rename it and update `Api__BaseUrl` / `Notifications__PublicWebUrl`.
 3. Open the web URL and sign in with a demo account.
 
-Notes: free Render services sleep after inactivity (first request can take ~1 min) and the free Render database expires
-after a period — any PostgreSQL works (e.g. Neon): set `ConnectionStrings__Database` to its URL
-(`postgresql://user:pass@host/db?sslmode=require` is accepted).
+Notes: free Render services sleep after inactivity (the first request can take ~1 min). Any PostgreSQL works:
+`ConnectionStrings__Database` accepts Npgsql strings and URLs (`postgresql://user:pass@host/db?sslmode=require`).
 
 ### Configuration
 
