@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!--
+      Always include the framework web assets (_framework/blazor.web.js).
+      The SDK only turns this on when it sees .razor files, but the Dockerfile restores
+      with just the .csproj copied (layer caching), so it must be explicit.
+    -->
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
   </PropertyGroup>
   <ItemGroup>
     <!-- The front-end only knows the HTTP contracts, never the domain or the database. -->
