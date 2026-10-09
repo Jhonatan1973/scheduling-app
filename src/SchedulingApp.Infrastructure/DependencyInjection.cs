@@ -1,19 +1,16 @@
-using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using SchedulingApp.Application.Abstractions;
-using SchedulingApp.Application.Options;
-using SchedulingApp.Application.Services;
-using SchedulingApp.Domain.Constants;
-using SchedulingApp.Domain.Entities;
-using SchedulingApp.Infrastructure.Auth;
-using SchedulingApp.Infrastructure.Caching;
-using SchedulingApp.Infrastructure.Data;
+using SchedulingApp.Application.Notifications;
+using SchedulingApp.Contracts;
 using SchedulingApp.Infrastructure.Email;
 using SchedulingApp.Infrastructure.Identity;
-using SchedulingApp.Infrastructure.Messaging;
+using SchedulingApp.Infrastructure.Persistence;
 
 namespace SchedulingApp.Infrastructure;
 
@@ -23,102 +20,91 @@ public static class DependencyInjection
     {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
+        services.Configure<NotificationOptions>(configuration.GetSection(NotificationOptions.SectionName));
+
+        var connectionString = configuration.GetConnectionString("Database")
+            ?? throw new InvalidOperationException("ConnectionStrings:Database is not configured.");
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(ConnectionStringResolver.Normalize(connectionString)));
+        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
-        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        services.AddIdentityCore<ApplicationUser>(options =>
             {
+                options.User.RequireUniqueEmail = true;
                 options.Password.RequiredLength = 8;
                 options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireDigit = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
             })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<AppDbContext>();
 
-        services.AddStackExchangeRedisCache(options =>
-        {
-            options.Configuration = configuration.GetConnectionString("Redis");
-        });
+        services.AddSingleton<JwtTokenService>();
+        services.AddScoped<IAuthService, AuthService>();
 
-        services.AddScoped<ISchedulingDbContext>(sp => sp.GetRequiredService<AppDbContext>());
-        services.AddScoped<ISlotCache, RedisSlotCache>();
-        services.AddScoped<SchedulingService>();
-        services.AddScoped<AuthService>();
-        services.AddSingleton<EmailSender>();
+        AddEmail(services, configuration);
+        return services;
+    }
 
-        services.AddMassTransit(x =>
-        {
-            x.UsingRabbitMq((context, cfg) =>
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
+        var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
             {
-                cfg.Host(configuration.GetConnectionString("RabbitMq"));
-                cfg.ConfigureEndpoints(context);
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwt.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwt.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = JwtTokenService.CreateKey(jwt.Secret),
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(1),
+                    NameClaimType = AppClaims.Name,
+                    RoleClaimType = AppClaims.Role
+                };
             });
-        });
 
-        services.AddScoped<INotificationPublisher, MassTransitNotificationPublisher>();
+        services.AddAuthorizationBuilder()
+            .AddPolicy(RoleNames.Client, p => p.RequireRole(RoleNames.Client))
+            .AddPolicy(RoleNames.Professional, p => p.RequireRole(RoleNames.Professional));
 
         return services;
     }
 
-    public static async Task SeedAsync(IServiceProvider services)
+    private static void AddEmail(IServiceCollection services, IConfiguration configuration)
     {
-        using var scope = services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
+        var provider = configuration.GetValue<string>($"{EmailOptions.SectionName}:Provider") ?? "Log";
 
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        foreach (var role in new[] { Roles.Client, Roles.Admin })
+        switch (provider.ToLowerInvariant())
         {
-            if (!await roleManager.RoleExistsAsync(role))
-            {
-                await roleManager.CreateAsync(new IdentityRole(role));
-            }
-        }
-
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        const string adminEmail = "admin@scheduling-app.local";
-        if (await userManager.FindByEmailAsync(adminEmail) is null)
-        {
-            var admin = new ApplicationUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                FullName = "Dr. Ana Admin"
-            };
-
-            await userManager.CreateAsync(admin, "ChangeMe123!");
-            await userManager.AddToRoleAsync(admin, Roles.Admin);
-
-            var professional = new Professional
-            {
-                Id = Guid.NewGuid(),
-                UserId = admin.Id,
-                DisplayName = "Dr. Ana Admin",
-                Specialty = "Dermatology",
-                SlotDurationMinutes = 30
-            };
-
-            db.Professionals.Add(professional);
-
-            db.AvailabilityRules.AddRange(
-                new AvailabilityRule
+            case "smtp":
+                services.AddTransient<IEmailSender, SmtpEmailSender>();
+                break;
+            case "brevo":
+                services.AddHttpClient<IEmailSender, BrevoEmailSender>((sp, client) =>
                 {
-                    Id = Guid.NewGuid(),
-                    ProfessionalId = professional.Id,
-                    DayOfWeek = DayOfWeek.Monday,
-                    StartTime = new TimeOnly(9, 0),
-                    EndTime = new TimeOnly(17, 0)
-                },
-                new AvailabilityRule
-                {
-                    Id = Guid.NewGuid(),
-                    ProfessionalId = professional.Id,
-                    DayOfWeek = DayOfWeek.Wednesday,
-                    StartTime = new TimeOnly(9, 0),
-                    EndTime = new TimeOnly(17, 0)
+                    var options = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
+                    client.BaseAddress = new Uri(options.Brevo.BaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(15);
                 });
-
-            await db.SaveChangesAsync();
+                break;
+            default:
+                services.AddTransient<IEmailSender, LogEmailSender>();
+                break;
         }
+
+        services.AddSingleton<OutboxEmailDispatcher>();
+        services.AddHostedService(sp => sp.GetRequiredService<OutboxEmailDispatcher>());
     }
 }
