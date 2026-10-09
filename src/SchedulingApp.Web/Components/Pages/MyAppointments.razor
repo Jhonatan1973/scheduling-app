@@ -1,0 +1,122 @@
+@page "/my/appointments"
+@inject ApiClient Api
+
+<PageTitle>My appointments · Scheduling App</PageTitle>
+
+<RequireRole Role="UserRole.Client" OnReady="LoadAsync">
+    <div class="page-head">
+        <h1>My appointments</h1>
+        <a class="btn btn-primary" href="/">Book new</a>
+    </div>
+
+    <div class="segmented small">
+        <button class="@(_tab == Tab.Upcoming ? "active" : null)" @onclick="() => _tab = Tab.Upcoming">Upcoming (@Upcoming.Count)</button>
+        <button class="@(_tab == Tab.History ? "active" : null)" @onclick="() => _tab = Tab.History">Past & cancelled (@History.Count)</button>
+    </div>
+
+    <ErrorAlert Message="@_error" OnDismiss="() => _error = null" />
+    <ErrorAlert Message="@_info" Kind="success" OnDismiss="() => _info = null" />
+
+    @if (_items is null)
+    {
+        <Loading />
+    }
+    else
+    {
+        var list = _tab == Tab.Upcoming ? Upcoming : History;
+        if (list.Count == 0)
+        {
+            <div class="empty-state">
+                <h3>@(_tab == Tab.Upcoming ? "No upcoming appointments" : "Nothing here yet")</h3>
+                @if (_tab == Tab.Upcoming)
+                {
+                    <p>Find a professional and request your first appointment.</p>
+                    <a class="btn btn-primary" href="/">Find a professional</a>
+                }
+            </div>
+        }
+        else
+        {
+            <ul class="appointment-list">
+                @foreach (var item in list)
+                {
+                    var isPast = item.End <= DateTimeOffset.UtcNow;
+                    <li class="card appointment" data-testid="appointment-item">
+                        <div class="date-badge">
+                            <span class="mon">@item.Start.ToString("MMM")</span>
+                            <span class="day">@item.Start.Day</span>
+                            <span class="dow">@item.Start.ToString("ddd")</span>
+                        </div>
+                        <div class="appointment-body">
+                            <div class="appointment-title">
+                                <strong>@item.ProfessionalName</strong>
+                                <StatusBadge Status="item.Status" IsPast="isPast" />
+                            </div>
+                            <span class="muted">@item.ProfessionalSpecialty · @item.Start.ToString("HH:mm")–@item.End.ToString("HH:mm") (@TimeZones.Friendly(item.TimeZoneId))</span>
+                            @if (!string.IsNullOrWhiteSpace(item.Notes))
+                            {
+                                <span class="note">“@item.Notes”</span>
+                            }
+                            @if (item.Status == AppointmentStatus.Cancelled)
+                            {
+                                <span class="note">
+                                    Cancelled by @(item.CancelledBy == UserRole.Client ? "you" : "the professional")@(item.CancellationReason is null ? "" : $": {item.CancellationReason}")
+                                </span>
+                            }
+                        </div>
+                        @if (item.Status != AppointmentStatus.Cancelled && item.Start > DateTimeOffset.UtcNow)
+                        {
+                            <div class="appointment-actions">
+                                <button class="btn btn-ghost btn-sm danger" @onclick="() => _toCancel = item" data-testid="cancel-appointment">Cancel</button>
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    }
+
+    <CancelDialog Appointment="_toCancel" Busy="_busy" OnClose="() => _toCancel = null" OnConfirm="CancelAsync" />
+</RequireRole>
+
+@code {
+    private enum Tab { Upcoming, History }
+
+    private Tab _tab = Tab.Upcoming;
+    private List<AppointmentDto>? _items;
+    private AppointmentDto? _toCancel;
+    private string? _error;
+    private string? _info;
+    private bool _busy;
+
+    private List<AppointmentDto> Upcoming =>
+        _items?.Where(a => a.Status != AppointmentStatus.Cancelled && a.End > DateTimeOffset.UtcNow).OrderBy(a => a.Start).ToList() ?? [];
+
+    private List<AppointmentDto> History =>
+        _items?.Except(Upcoming).OrderByDescending(a => a.Start).ToList() ?? [];
+
+    private async Task LoadAsync()
+    {
+        var result = await Api.GetMyAppointmentsAsync();
+        _items = result.Value ?? [];
+        _error = result.Error;
+    }
+
+    private async Task CancelAsync(string? reason)
+    {
+        if (_toCancel is null)
+            return;
+
+        _busy = true;
+        var result = await Api.CancelAsync(_toCancel.Id, reason);
+        _busy = false;
+        _toCancel = null;
+
+        if (result.IsSuccess)
+            _info = "Appointment cancelled. The professional was notified by email.";
+        else
+            _error = result.Error;
+
+        await LoadAsync();
+    }
+}

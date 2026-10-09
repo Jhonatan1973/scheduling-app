@@ -1,0 +1,76 @@
+@implements IDisposable
+@inject AppAuthStateProvider Auth
+@inject NavigationManager Navigation
+
+@*
+    Guards a page: waits for the stored session to load, redirects anonymous users to /login
+    and shows a friendly message for the wrong role. Calls OnReady once access is granted.
+*@
+@if (!Auth.IsInitialized)
+{
+    <Loading />
+}
+else if (!Auth.IsAuthenticated)
+{
+    <Loading Text="Redirecting to sign in…" />
+}
+else if (Role is not null && Auth.User!.Role != Role)
+{
+    <div class="empty-state">
+        <h2>This area is for @(Role == UserRole.Professional ? "professionals" : "clients")</h2>
+        <p>You are signed in as a @Auth.User.Role.ToString().ToLowerInvariant().</p>
+        <a class="btn btn-primary" href="@(Auth.IsProfessional ? "/pro/schedule" : "/")">Go to my area</a>
+    </div>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public UserRole? Role { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnReady { get; set; }
+
+    private bool _readyRaised;
+
+    protected override void OnInitialized() => Auth.AuthenticationStateChanged += OnAuthChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Auth.EnsureInitializedAsync();
+            await EvaluateAsync();
+        }
+    }
+
+    private async Task EvaluateAsync()
+    {
+        if (!Auth.IsInitialized)
+            return;
+
+        if (!Auth.IsAuthenticated)
+        {
+            var returnUrl = Uri.EscapeDataString(Navigation.ToBaseRelativePath(Navigation.Uri));
+            Navigation.NavigateTo($"/login?returnUrl=/{returnUrl}");
+            return;
+        }
+
+        if (!_readyRaised && (Role is null || Auth.User!.Role == Role))
+        {
+            _readyRaised = true;
+            StateHasChanged();
+            await OnReady.InvokeAsync();
+        }
+    }
+
+    private void OnAuthChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> _) =>
+        InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            await EvaluateAsync();
+        });
+
+    public void Dispose() => Auth.AuthenticationStateChanged -= OnAuthChanged;
+}

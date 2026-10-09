@@ -1,0 +1,16 @@
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="alert alert-@Kind" role="alert" data-testid="alert-@Kind">
+        <span>@Message</span>
+        @if (OnDismiss.HasDelegate)
+        {
+            <button class="alert-close" aria-label="Dismiss" @onclick="OnDismiss">✕</button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string Kind { get; set; } = "error";
+    [Parameter] public EventCallback OnDismiss { get; set; }
+}

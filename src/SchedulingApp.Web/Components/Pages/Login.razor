@@ -1,53 +1,85 @@
 @page "/login"
-@using SchedulingApp.Application.Dtos
-@inject SchedulingApiClient Api
-@inject AuthSession Session
-@inject JwtAuthenticationStateProvider AuthStateProvider
+@inject ApiClient Api
+@inject AppAuthStateProvider Auth
 @inject NavigationManager Navigation
+@inject IOptions<WebOptions> Options
 
-<PageTitle>Sign in</PageTitle>
+<PageTitle>Sign in · Scheduling App</PageTitle>
 
-<h1>Sign in</h1>
+<div class="auth-layout">
+    <div class="card auth-card">
+        <h1>Welcome back</h1>
+        <p class="muted">Sign in to book or manage appointments.</p>
 
-<EditForm Model="_model" OnValidSubmit="HandleLoginAsync" class="col-md-5">
-    <DataAnnotationsValidator />
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <InputText @bind-Value="_model.Email" class="form-control" />
+        <form @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+            <label class="field">
+                <span>Email</span>
+                <input type="email" autocomplete="email" required @bind="_email" data-testid="login-email" />
+            </label>
+            <label class="field">
+                <span>Password</span>
+                <input type="password" autocomplete="current-password" required @bind="_password" data-testid="login-password" />
+            </label>
+
+            <ErrorAlert Message="@_error" />
+
+            <button class="btn btn-primary btn-block" type="submit" disabled="@_busy" data-testid="login-submit">
+                @(_busy ? "Signing in…" : "Sign in")
+            </button>
+        </form>
+
+        <p class="muted center">No account yet? <a href="/register">Create one</a></p>
     </div>
-    <div class="mb-3">
-        <label class="form-label">Password</label>
-        <InputText @bind-Value="_model.Password" type="password" class="form-control" />
-    </div>
-    @if (!string.IsNullOrWhiteSpace(_error))
+
+    @if (Options.Value.ShowDemoAccounts)
     {
-        <div class="alert alert-danger">@_error</div>
+        <aside class="card demo-card">
+            <h3>Try the demo</h3>
+            <p class="muted">Password for all demo accounts: <code>Demo@12345</code></p>
+            <button class="demo-account" @onclick='() => Fill("client@demo.com")'>
+                <strong>Client</strong><span>client@demo.com</span>
+            </button>
+            <button class="demo-account" @onclick='() => Fill("sofia@demo.com")'>
+                <strong>Professional · Dermatologist</strong><span>sofia@demo.com</span>
+            </button>
+            <button class="demo-account" @onclick='() => Fill("lucas@demo.com")'>
+                <strong>Professional · Barber</strong><span>lucas@demo.com</span>
+            </button>
+        </aside>
     }
-    <button class="btn btn-primary" disabled="@_busy">Sign in</button>
-</EditForm>
-
-<p class="mt-3">No account? <a href="register">Create one</a>.</p>
+</div>
 
 @code {
-    private readonly LoginRequest _model = new(string.Empty, string.Empty);
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+
+    private string _email = string.Empty;
+    private string _password = string.Empty;
     private string? _error;
     private bool _busy;
 
-    private async Task HandleLoginAsync()
+    private void Fill(string email)
+    {
+        _email = email;
+        _password = "Demo@12345";
+    }
+
+    private async Task SubmitAsync()
     {
         _busy = true;
         _error = null;
 
-        var response = await Api.LoginAsync(_model);
-        if (response is null)
+        var result = await Api.LoginAsync(new LoginRequest(_email, _password));
+        if (!result.IsSuccess)
         {
-            _error = "Invalid email or password.";
+            _error = result.Error;
             _busy = false;
             return;
         }
 
-        Session.Set(response);
-        AuthStateProvider.NotifyChanged();
-        Navigation.NavigateTo(response.Role == Domain.Constants.Roles.Admin ? "admin/dashboard" : "appointments");
+        await Auth.SignInAsync(result.Value!);
+        Navigation.NavigateTo(SafeReturnUrl() ?? (result.Value!.User.Role == UserRole.Professional ? "/pro/schedule" : "/"));
     }
+
+    private string? SafeReturnUrl() =>
+        !string.IsNullOrWhiteSpace(ReturnUrl) && ReturnUrl.StartsWith('/') && !ReturnUrl.StartsWith("//") ? ReturnUrl : null;
 }

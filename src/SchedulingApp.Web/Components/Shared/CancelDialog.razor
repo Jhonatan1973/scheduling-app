@@ -1,0 +1,45 @@
+@* Modal asking for an optional reason before cancelling/declining an appointment. *@
+@if (Appointment is not null)
+{
+    <div class="modal-backdrop" @onclick="CloseAsync"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+        <h3 id="cancel-title">@Title</h3>
+        <p class="muted">
+            @Appointment.Start.ToString("dddd, MMM d") at @Appointment.Start.ToString("HH:mm") ·
+            @(ForProfessional ? Appointment.ClientName : Appointment.ProfessionalName)
+        </p>
+        <label class="field">
+            <span>Reason (optional, shared by email)</span>
+            <textarea rows="3" maxlength="500" @bind="_reason" data-testid="cancel-reason"></textarea>
+        </label>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" @onclick="CloseAsync" disabled="@Busy">Keep it</button>
+            <button class="btn btn-danger" @onclick="ConfirmAsync" disabled="@Busy" data-testid="confirm-cancel">
+                @(Busy ? "Cancelling…" : Title)
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public AppointmentDto? Appointment { get; set; }
+    [Parameter] public bool ForProfessional { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<string?> OnConfirm { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string? _reason;
+
+    private string Title => ForProfessional && Appointment?.Status == AppointmentStatus.Pending
+        ? "Decline request"
+        : "Cancel appointment";
+
+    protected override void OnParametersSet()
+    {
+        if (Appointment is null)
+            _reason = null;
+    }
+
+    private Task ConfirmAsync() => OnConfirm.InvokeAsync(_reason);
+    private Task CloseAsync() => OnClose.InvokeAsync();
+}

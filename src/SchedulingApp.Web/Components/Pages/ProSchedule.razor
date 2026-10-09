@@ -1,0 +1,198 @@
+@page "/pro/schedule"
+@inject ApiClient Api
+
+<PageTitle>Schedule · Scheduling App</PageTitle>
+
+<RequireRole Role="UserRole.Professional" OnReady="InitAsync">
+    <div class="page-head">
+        <div>
+            <h1>My schedule</h1>
+            <p class="muted">@RangeLabel @(_schedule is null ? "" : $"· {TimeZones.Friendly(_schedule.TimeZoneId)}")</p>
+        </div>
+        <div class="toolbar">
+            <div class="segmented small">
+                <button class="@(_view == View.Day ? "active" : null)" @onclick="() => SetViewAsync(View.Day)" data-testid="view-day">Day</button>
+                <button class="@(_view == View.Week ? "active" : null)" @onclick="() => SetViewAsync(View.Week)" data-testid="view-week">Week</button>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-ghost btn-sm" aria-label="Previous" @onclick="() => MoveAsync(-1)">‹</button>
+                <button class="btn btn-ghost btn-sm" @onclick="TodayAsync">Today</button>
+                <button class="btn btn-ghost btn-sm" aria-label="Next" @onclick="() => MoveAsync(1)">›</button>
+            </div>
+        </div>
+    </div>
+
+    <ErrorAlert Message="@_error" OnDismiss="() => _error = null" />
+    <ErrorAlert Message="@_info" Kind="success" OnDismiss="() => _info = null" />
+
+    @if (_schedule is null)
+    {
+        <Loading />
+    }
+    else
+    {
+        <div class="stats">
+            <div class="stat warn"><span class="stat-value" data-testid="stat-pending">@_schedule.PendingCount</span><span>Pending</span></div>
+            <div class="stat ok"><span class="stat-value" data-testid="stat-confirmed">@_schedule.ConfirmedCount</span><span>Confirmed</span></div>
+            <div class="stat"><span class="stat-value">@_schedule.CancelledCount</span><span>Cancelled</span></div>
+        </div>
+
+        <label class="checkbox">
+            <input type="checkbox" @bind="_showCancelled" /> Show cancelled
+        </label>
+
+        @foreach (var day in Days)
+        {
+            var items = _schedule.Appointments
+                .Where(a => DateOnly.FromDateTime(a.Start.DateTime) == day)
+                .Where(a => _showCancelled || a.Status != AppointmentStatus.Cancelled)
+                .ToList();
+
+            <section class="day-block @(day == _today ? "today" : null)">
+                <h3>@day.ToString("dddd, MMMM d") @if (day == _today) { <span class="pill">Today</span> }</h3>
+
+                @if (items.Count == 0)
+                {
+                    <p class="muted day-empty">No appointments.</p>
+                }
+                else
+                {
+                    <ul class="timeline">
+                        @foreach (var item in items)
+                        {
+                            var isPast = item.End <= DateTimeOffset.UtcNow;
+                            <li class="timeline-item status-@item.Status.ToString().ToLowerInvariant()" data-testid="schedule-item">
+                                <span class="time">@item.Start.ToString("HH:mm")<small>@item.End.ToString("HH:mm")</small></span>
+                                <div class="timeline-body">
+                                    <div class="appointment-title">
+                                        <strong>@item.ClientName</strong>
+                                        <StatusBadge Status="item.Status" IsPast="isPast" />
+                                    </div>
+                                    <a class="muted" href="mailto:@item.ClientEmail">@item.ClientEmail</a>
+                                    @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                    {
+                                        <span class="note">“@item.Notes”</span>
+                                    }
+                                    @if (item.CancellationReason is not null)
+                                    {
+                                        <span class="note">Reason: @item.CancellationReason</span>
+                                    }
+                                </div>
+                                @if (!isPast && item.Status != AppointmentStatus.Cancelled)
+                                {
+                                    <div class="appointment-actions">
+                                        @if (item.Status == AppointmentStatus.Pending)
+                                        {
+                                            <button class="btn btn-success btn-sm" disabled="@_busy" @onclick="() => ConfirmAsync(item)" data-testid="confirm-appointment">Confirm</button>
+                                        }
+                                        <button class="btn btn-ghost btn-sm danger" disabled="@_busy" @onclick="() => _toCancel = item" data-testid="decline-appointment">
+                                            @(item.Status == AppointmentStatus.Pending ? "Decline" : "Cancel")
+                                        </button>
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        }
+    }
+
+    <CancelDialog Appointment="_toCancel" ForProfessional="true" Busy="_busy" OnClose="() => _toCancel = null" OnConfirm="CancelAsync" />
+</RequireRole>
+
+@code {
+    private enum View { Day, Week }
+
+    private View _view = View.Week;
+    private DateOnly _today;
+    private DateOnly _anchor;
+    private ScheduleDto? _schedule;
+    private AppointmentDto? _toCancel;
+    private bool _showCancelled;
+    private bool _busy;
+    private string? _error;
+    private string? _info;
+    private string _timeZoneId = "UTC";
+
+    private DateOnly From => _view == View.Day ? _anchor : StartOfWeek(_anchor);
+    private DateOnly To => _view == View.Day ? _anchor : From.AddDays(6);
+
+    private IEnumerable<DateOnly> Days =>
+        Enumerable.Range(0, To.DayNumber - From.DayNumber + 1).Select(From.AddDays);
+
+    private string RangeLabel => _view == View.Day
+        ? _anchor.ToString("dddd, MMMM d, yyyy")
+        : $"{From:MMM d} – {To:MMM d, yyyy}";
+
+    private async Task InitAsync()
+    {
+        var profile = await Api.GetMyProfileAsync();
+        _timeZoneId = profile.Value?.TimeZoneId ?? "UTC";
+        _today = TimeZones.Today(_timeZoneId);
+        _anchor = _today;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Api.GetScheduleAsync(From, To);
+        if (result.IsSuccess)
+            _schedule = result.Value;
+        else
+            _error = result.Error;
+    }
+
+    private Task SetViewAsync(View view)
+    {
+        _view = view;
+        return LoadAsync();
+    }
+
+    private Task MoveAsync(int direction)
+    {
+        _anchor = _anchor.AddDays(direction * (_view == View.Day ? 1 : 7));
+        return LoadAsync();
+    }
+
+    private Task TodayAsync()
+    {
+        _anchor = _today;
+        return LoadAsync();
+    }
+
+    private async Task ConfirmAsync(AppointmentDto item)
+    {
+        _busy = true;
+        var result = await Api.ConfirmAsync(item.Id);
+        _busy = false;
+
+        if (result.IsSuccess)
+            _info = $"Confirmed {item.ClientName} at {item.Start:HH:mm}. The client was notified by email.";
+        else
+            _error = result.Error;
+
+        await LoadAsync();
+    }
+
+    private async Task CancelAsync(string? reason)
+    {
+        if (_toCancel is null)
+            return;
+
+        _busy = true;
+        var result = await Api.CancelAsync(_toCancel.Id, reason);
+        _busy = false;
+        _toCancel = null;
+
+        if (result.IsSuccess)
+            _info = "Done. The client was notified by email.";
+        else
+            _error = result.Error;
+
+        await LoadAsync();
+    }
+
+    private static DateOnly StartOfWeek(DateOnly date) =>
+        date.AddDays(-(((int)date.DayOfWeek + 6) % 7)); // Monday
+}

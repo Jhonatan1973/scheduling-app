@@ -1,0 +1,245 @@
+@page "/professionals/{Id:guid}"
+@implements IDisposable
+@inject ApiClient Api
+@inject AppAuthStateProvider Auth
+@inject NavigationManager Navigation
+
+<PageTitle>@(_professional?.DisplayName ?? "Professional") · Scheduling App</PageTitle>
+
+<a class="back-link" href="/">← All professionals</a>
+
+@if (_loadError is not null)
+{
+    <ErrorAlert Message="@_loadError" />
+}
+else if (_professional is null)
+{
+    <Loading />
+}
+else
+{
+    <div class="booking-layout">
+        <aside class="card profile-card">
+            <div class="avatar avatar-xl">@_professional.DisplayName[0]</div>
+            <h1>@_professional.DisplayName</h1>
+            <span class="pill">@_professional.Specialty</span>
+            @if (!string.IsNullOrWhiteSpace(_professional.Bio))
+            {
+                <p class="muted">@_professional.Bio</p>
+            }
+            <dl class="facts">
+                <dt>Session</dt><dd>@_professional.SlotDurationMinutes minutes</dd>
+                <dt>Time zone</dt><dd>@TimeZones.Friendly(_professional.TimeZoneId)</dd>
+            </dl>
+
+            <h3 class="small-title">Working hours</h3>
+            @if (_rules.Count == 0)
+            {
+                <p class="muted">No working hours published yet.</p>
+            }
+            else
+            {
+                <ul class="hours">
+                    @foreach (var day in _rules.GroupBy(r => r.DayOfWeek))
+                    {
+                        <li>
+                            <span>@day.Key.ToString()[..3]</span>
+                            <span>@string.Join(", ", day.Select(r => $"{r.StartTime:HH\\:mm}–{r.EndTime:HH\\:mm}"))</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </aside>
+
+        <section class="card booking-card">
+            @if (_booked is not null)
+            {
+                <div class="success-panel" data-testid="booking-success">
+                    <div class="success-icon">✓</div>
+                    <h2>Request sent!</h2>
+                    <p>
+                        <strong>@_booked.Start.ToString("dddd, MMMM d")</strong> at <strong>@_booked.Start.ToString("HH:mm")</strong>
+                        with @_booked.ProfessionalName.
+                    </p>
+                    <p class="muted">Your appointment is <StatusBadge Status="_booked.Status" />. We emailed you the details and will email again once it is confirmed.</p>
+                    <div class="row-actions">
+                        <a class="btn btn-primary" href="/my/appointments">View my appointments</a>
+                        <button class="btn btn-ghost" @onclick="BookAnother">Book another time</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <h2>Choose a date</h2>
+                <div class="date-strip" role="listbox" aria-label="Dates">
+                    @foreach (var date in _dates)
+                    {
+                        var hasHours = _rules.Any(r => r.DayOfWeek == date.DayOfWeek);
+                        <button class="date-chip @(date == _selectedDate ? "selected" : null) @(hasHours ? null : "off")"
+                                disabled="@(!hasHours)"
+                                data-testid="date-chip"
+                                @onclick="() => SelectDateAsync(date)">
+                            <span class="dow">@date.ToString("ddd")</span>
+                            <span class="day">@date.Day</span>
+                            <span class="mon">@date.ToString("MMM")</span>
+                        </button>
+                    }
+                </div>
+
+                <h2>Available times <small class="muted">(@TimeZones.Friendly(_professional.TimeZoneId))</small></h2>
+                <ErrorAlert Message="@_bookError" />
+
+                @if (_loadingSlots)
+                {
+                    <Loading Text="Loading times…" />
+                }
+                else if (_slots.Count == 0)
+                {
+                    <div class="empty-state compact">
+                        <p>No free times on this day. Try another date.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="slot-grid">
+                        @foreach (var slot in _slots)
+                        {
+                            <button class="slot @(slot == _selectedSlot ? "selected" : null)"
+                                    disabled="@(!slot.IsAvailable)"
+                                    title="@(slot.IsAvailable ? "Available" : "Already booked")"
+                                    data-testid="slot"
+                                    @onclick="() => _selectedSlot = slot">
+                                @slot.Start.ToString("HH:mm")
+                            </button>
+                        }
+                    </div>
+                }
+
+                @if (_selectedSlot is not null)
+                {
+                    <div class="confirm-box">
+                        <p>
+                            <strong>@_selectedSlot.Start.ToString("dddd, MMMM d")</strong>,
+                            @_selectedSlot.Start.ToString("HH:mm") – @_selectedSlot.End.ToString("HH:mm")
+                        </p>
+
+                        @if (Auth.IsClient)
+                        {
+                            <label class="field">
+                                <span>Notes for the professional (optional)</span>
+                                <textarea rows="2" maxlength="500" @bind="_notes" data-testid="booking-notes"></textarea>
+                            </label>
+                            <button class="btn btn-primary btn-block" disabled="@_booking" @onclick="BookAsync" data-testid="book-submit">
+                                @(_booking ? "Booking…" : "Request appointment")
+                            </button>
+                        }
+                        else if (Auth.IsProfessional)
+                        {
+                            <p class="muted">You're signed in as a professional. Use a client account to book.</p>
+                        }
+                        else
+                        {
+                            <p class="muted">Sign in or create a free account to request this time.</p>
+                            <div class="row-actions">
+                                <a class="btn btn-primary" href="@LoginUrl" data-testid="login-to-book">Sign in to book</a>
+                                <a class="btn btn-ghost" href="/register">Create account</a>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const int DaysShown = 21;
+
+    [Parameter] public Guid Id { get; set; }
+
+    private ProfessionalDto? _professional;
+    private List<AvailabilityRuleDto> _rules = [];
+    private List<DateOnly> _dates = [];
+    private DateOnly _selectedDate;
+    private List<SlotDto> _slots = [];
+    private SlotDto? _selectedSlot;
+    private AppointmentDto? _booked;
+    private string? _notes;
+    private string? _loadError;
+    private string? _bookError;
+    private bool _loadingSlots;
+    private bool _booking;
+
+    private string LoginUrl => $"/login?returnUrl={Uri.EscapeDataString($"/professionals/{Id}")}";
+
+    protected override void OnInitialized() => Auth.AuthenticationStateChanged += OnAuthChanged;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var professional = await Api.GetProfessionalAsync(Id);
+        if (!professional.IsSuccess)
+        {
+            _loadError = professional.Error;
+            return;
+        }
+
+        _professional = professional.Value!;
+        _rules = (await Api.GetAvailabilityAsync(Id)).Value ?? [];
+
+        var today = TimeZones.Today(_professional.TimeZoneId);
+        _dates = Enumerable.Range(0, DaysShown).Select(today.AddDays).ToList();
+
+        var firstWorkingDay = _dates.FirstOrDefault(d => _rules.Any(r => r.DayOfWeek == d.DayOfWeek), today);
+        await SelectDateAsync(firstWorkingDay);
+    }
+
+    private async Task SelectDateAsync(DateOnly date)
+    {
+        _selectedDate = date;
+        _selectedSlot = null;
+        _bookError = null;
+        _loadingSlots = true;
+
+        var result = await Api.GetSlotsAsync(Id, date);
+        _slots = result.Value?.Slots.ToList() ?? [];
+        _loadingSlots = false;
+    }
+
+    private async Task BookAsync()
+    {
+        if (_selectedSlot is null)
+            return;
+
+        _booking = true;
+        _bookError = null;
+
+        var result = await Api.BookAsync(new BookAppointmentRequest(Id, _selectedSlot.Start, _notes));
+        _booking = false;
+
+        if (!result.IsSuccess)
+        {
+            _bookError = result.Error;
+            if (result.Status == System.Net.HttpStatusCode.Conflict)
+            {
+                var keepError = _bookError;
+                await SelectDateAsync(_selectedDate);
+                _bookError = keepError;
+            }
+            return;
+        }
+
+        _booked = result.Value;
+        _notes = null;
+    }
+
+    private async Task BookAnother()
+    {
+        _booked = null;
+        await SelectDateAsync(_selectedDate);
+    }
+
+    private void OnAuthChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> _) =>
+        InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Auth.AuthenticationStateChanged -= OnAuthChanged;
+}

@@ -1,56 +1,105 @@
 @page "/register"
-@using SchedulingApp.Application.Dtos
-@using SchedulingApp.Domain.Constants
-@inject SchedulingApiClient Api
-@inject AuthSession Session
-@inject JwtAuthenticationStateProvider AuthStateProvider
+@inject ApiClient Api
+@inject AppAuthStateProvider Auth
 @inject NavigationManager Navigation
 
-<PageTitle>Create account</PageTitle>
+<PageTitle>Create account · Scheduling App</PageTitle>
 
-<h1>Create client account</h1>
+<div class="auth-layout single">
+    <div class="card auth-card">
+        <h1>Create your account</h1>
 
-<EditForm Model="_model" OnValidSubmit="HandleRegisterAsync" class="col-md-5">
-    <div class="mb-3">
-        <label class="form-label">Full name</label>
-        <InputText @bind-Value="_model.FullName" class="form-control" />
+        <div class="segmented" role="tablist">
+            <button type="button" class="@(_role == UserRole.Client ? "active" : null)" @onclick="() => _role = UserRole.Client" data-testid="role-client">
+                I want to book
+            </button>
+            <button type="button" class="@(_role == UserRole.Professional ? "active" : null)" @onclick="() => _role = UserRole.Professional" data-testid="role-professional">
+                I'm a professional
+            </button>
+        </div>
+
+        <form @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+            <label class="field">
+                <span>@(_role == UserRole.Professional ? "Name shown to clients" : "Full name")</span>
+                <input required maxlength="120" autocomplete="name" @bind="_fullName" data-testid="register-name" />
+            </label>
+            <label class="field">
+                <span>Email</span>
+                <input type="email" required autocomplete="email" @bind="_email" data-testid="register-email" />
+            </label>
+            <label class="field">
+                <span>Password</span>
+                <input type="password" required minlength="8" autocomplete="new-password" @bind="_password" data-testid="register-password" />
+                <small class="muted">At least 8 characters, with a lowercase letter and a digit.</small>
+            </label>
+
+            @if (_role == UserRole.Professional)
+            {
+                <div class="field-row">
+                    <label class="field">
+                        <span>Specialty</span>
+                        <input required maxlength="120" placeholder="e.g. Barber, Psychologist" @bind="_specialty" data-testid="register-specialty" />
+                    </label>
+                    <label class="field">
+                        <span>Time zone</span>
+                        <select @bind="_timeZone">
+                            @foreach (var tz in TimeZones.Common)
+                            {
+                                <option value="@tz">@TimeZones.Friendly(tz)</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+            }
+
+            <ErrorAlert Message="@_error" />
+
+            <button class="btn btn-primary btn-block" type="submit" disabled="@_busy" data-testid="register-submit">
+                @(_busy ? "Creating account…" : "Create account")
+            </button>
+        </form>
+
+        <p class="muted center">Already have an account? <a href="/login">Sign in</a></p>
     </div>
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <InputText @bind-Value="_model.Email" class="form-control" />
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Password</label>
-        <InputText @bind-Value="_model.Password" type="password" class="form-control" />
-        <div class="form-text">Minimum 8 characters.</div>
-    </div>
-    @if (!string.IsNullOrWhiteSpace(_error))
-    {
-        <div class="alert alert-danger">@_error</div>
-    }
-    <button class="btn btn-primary" disabled="@_busy">Register</button>
-</EditForm>
+</div>
 
 @code {
-    private readonly RegisterRequest _model = new(string.Empty, string.Empty, string.Empty, Roles.Client);
+    [SupplyParameterFromQuery(Name = "role")] public string? RoleQuery { get; set; }
+
+    private UserRole _role = UserRole.Client;
+    private string _fullName = string.Empty;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string _specialty = string.Empty;
+    private string _timeZone = "America/Sao_Paulo";
     private string? _error;
     private bool _busy;
 
-    private async Task HandleRegisterAsync()
+    protected override void OnInitialized()
+    {
+        if (Enum.TryParse<UserRole>(RoleQuery, ignoreCase: true, out var role))
+            _role = role;
+    }
+
+    private async Task SubmitAsync()
     {
         _busy = true;
         _error = null;
 
-        var response = await Api.RegisterAsync(_model);
-        if (response is null)
+        var request = new RegisterRequest(
+            _fullName, _email, _password, _role,
+            _role == UserRole.Professional ? _specialty : null,
+            _role == UserRole.Professional ? _timeZone : null);
+
+        var result = await Api.RegisterAsync(request);
+        if (!result.IsSuccess)
         {
-            _error = "Could not create account. Check your details.";
+            _error = result.Error;
             _busy = false;
             return;
         }
 
-        Session.Set(response);
-        AuthStateProvider.NotifyChanged();
-        Navigation.NavigateTo("book");
+        await Auth.SignInAsync(result.Value!);
+        Navigation.NavigateTo(_role == UserRole.Professional ? "/pro/availability?welcome=1" : "/");
     }
 }

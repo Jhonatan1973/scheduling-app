@@ -1,0 +1,232 @@
+@page "/pro/availability"
+@inject ApiClient Api
+
+<PageTitle>Availability · Scheduling App</PageTitle>
+
+<RequireRole Role="UserRole.Professional" OnReady="LoadAsync">
+    <div class="page-head">
+        <div>
+            <h1>Availability & profile</h1>
+            <p class="muted">Clients can only book inside the working hours below.</p>
+        </div>
+        @if (_profile is not null)
+        {
+            <a class="btn btn-ghost" href="/professionals/@_profile.Id" target="_blank">View public page ↗</a>
+        }
+    </div>
+
+    @if (Welcome)
+    {
+        <ErrorAlert Kind="success" Message="Welcome! Add your working hours so clients can start booking." />
+    }
+    <ErrorAlert Message="@_error" OnDismiss="() => _error = null" />
+    <ErrorAlert Message="@_info" Kind="success" OnDismiss="() => _info = null" />
+
+    @if (_profile is null)
+    {
+        <Loading />
+    }
+    else
+    {
+        <div class="two-columns">
+            <section class="card">
+                <h2>Weekly hours</h2>
+
+                <form class="rule-form" @onsubmit="AddRuleAsync" @onsubmit:preventDefault>
+                    <label class="field">
+                        <span>Day</span>
+                        <select @bind="_newDay" data-testid="rule-day">
+                            @foreach (var day in WeekDays)
+                            {
+                                <option value="@day">@day</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>From</span>
+                        <input type="time" step="900" @bind="_newStart" @bind:format="HH:mm" data-testid="rule-start" />
+                    </label>
+                    <label class="field">
+                        <span>To</span>
+                        <input type="time" step="900" @bind="_newEnd" @bind:format="HH:mm" data-testid="rule-end" />
+                    </label>
+                    <button class="btn btn-primary" type="submit" disabled="@_busy" data-testid="rule-add">Add</button>
+                </form>
+
+                <ul class="week-editor">
+                    @foreach (var day in WeekDays)
+                    {
+                        var rules = _rules.Where(r => r.DayOfWeek == day).OrderBy(r => r.StartTime).ToList();
+                        <li>
+                            <span class="day-name">@day</span>
+                            <div class="intervals">
+                                @if (rules.Count == 0)
+                                {
+                                    <span class="muted">Unavailable</span>
+                                }
+                                @foreach (var rule in rules)
+                                {
+                                    <span class="interval" data-testid="rule-item">
+                                        @rule.StartTime.ToString("HH:mm")–@rule.EndTime.ToString("HH:mm")
+                                        <button aria-label="Remove interval" title="Remove" @onclick="() => DeleteRuleAsync(rule)">✕</button>
+                                    </span>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+
+            <section class="card">
+                <h2>Public profile</h2>
+                <form @onsubmit="SaveProfileAsync" @onsubmit:preventDefault>
+                    <label class="field">
+                        <span>Display name</span>
+                        <input required maxlength="120" @bind="_form.DisplayName" />
+                    </label>
+                    <label class="field">
+                        <span>Specialty</span>
+                        <input required maxlength="120" @bind="_form.Specialty" />
+                    </label>
+                    <label class="field">
+                        <span>Bio</span>
+                        <textarea rows="3" maxlength="1000" @bind="_form.Bio"></textarea>
+                    </label>
+                    <div class="field-row">
+                        <label class="field">
+                            <span>Session length</span>
+                            <select @bind="_form.SlotDurationMinutes" data-testid="slot-duration">
+                                @foreach (var minutes in SlotOptions)
+                                {
+                                    <option value="@minutes">@minutes min</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Time zone</span>
+                            <select @bind="_form.TimeZoneId">
+                                @foreach (var tz in TimeZoneOptions)
+                                {
+                                    <option value="@tz">@TimeZones.Friendly(tz)</option>
+                                }
+                            </select>
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" type="submit" disabled="@_busy">Save profile</button>
+                </form>
+            </section>
+        </div>
+    }
+</RequireRole>
+
+@code {
+    private static readonly DayOfWeek[] WeekDays =
+        [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
+
+    private static readonly int[] SlotOptions = [15, 20, 30, 45, 60, 90, 120];
+
+    [SupplyParameterFromQuery(Name = "welcome")] public int? WelcomeFlag { get; set; }
+    private bool Welcome => WelcomeFlag == 1 && _rules.Count == 0;
+
+    private ProfessionalDto? _profile;
+    private List<AvailabilityRuleDto> _rules = [];
+    private ProfileForm _form = new();
+    private DayOfWeek _newDay = DayOfWeek.Monday;
+    private TimeOnly _newStart = new(9, 0);
+    private TimeOnly _newEnd = new(17, 0);
+    private bool _busy;
+    private string? _error;
+    private string? _info;
+
+    private IEnumerable<string> TimeZoneOptions =>
+        TimeZones.Common.Contains(_form.TimeZoneId) ? TimeZones.Common : TimeZones.Common.Prepend(_form.TimeZoneId);
+
+    private async Task LoadAsync()
+    {
+        var profile = await Api.GetMyProfileAsync();
+        if (!profile.IsSuccess)
+        {
+            _error = profile.Error;
+            return;
+        }
+
+        _profile = profile.Value!;
+        _form = ProfileForm.From(_profile);
+        await ReloadRulesAsync();
+    }
+
+    private async Task ReloadRulesAsync()
+    {
+        var rules = await Api.GetMyAvailabilityAsync();
+        _rules = rules.Value ?? [];
+        _error ??= rules.Error;
+    }
+
+    private async Task AddRuleAsync()
+    {
+        _busy = true;
+        _error = _info = null;
+
+        var result = await Api.AddAvailabilityAsync(new CreateAvailabilityRuleRequest(_newDay, _newStart, _newEnd));
+        if (result.IsSuccess)
+        {
+            _info = $"{_newDay} {_newStart:HH\\:mm}–{_newEnd:HH\\:mm} added.";
+            await ReloadRulesAsync();
+        }
+        else
+        {
+            _error = result.Error;
+        }
+
+        _busy = false;
+    }
+
+    private async Task DeleteRuleAsync(AvailabilityRuleDto rule)
+    {
+        _error = _info = null;
+        var result = await Api.DeleteAvailabilityAsync(rule.Id);
+        if (!result.IsSuccess)
+            _error = result.Error;
+
+        await ReloadRulesAsync();
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        _busy = true;
+        _error = _info = null;
+
+        var result = await Api.UpdateMyProfileAsync(new UpdateProfessionalProfileRequest(
+            _form.DisplayName, _form.Specialty, _form.Bio, _form.SlotDurationMinutes, _form.TimeZoneId));
+
+        if (result.IsSuccess)
+        {
+            _profile = result.Value!;
+            _info = "Profile saved.";
+        }
+        else
+        {
+            _error = result.Error;
+        }
+
+        _busy = false;
+    }
+
+    private sealed class ProfileForm
+    {
+        public string DisplayName { get; set; } = string.Empty;
+        public string Specialty { get; set; } = string.Empty;
+        public string? Bio { get; set; }
+        public int SlotDurationMinutes { get; set; } = 30;
+        public string TimeZoneId { get; set; } = "UTC";
+
+        public static ProfileForm From(ProfessionalDto p) => new()
+        {
+            DisplayName = p.DisplayName,
+            Specialty = p.Specialty,
+            Bio = p.Bio,
+            SlotDurationMinutes = p.SlotDurationMinutes,
+            TimeZoneId = p.TimeZoneId
+        };
+    }
+}

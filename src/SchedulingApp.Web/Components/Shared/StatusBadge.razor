@@ -1,0 +1,15 @@
+<span class="badge badge-@Status.ToString().ToLowerInvariant()" data-testid="status-badge">@Label</span>
+
+@code {
+    [Parameter, EditorRequired] public AppointmentStatus Status { get; set; }
+    [Parameter] public bool IsPast { get; set; }
+
+    private string Label => Status switch
+    {
+        AppointmentStatus.Pending when IsPast => "Expired",
+        AppointmentStatus.Confirmed when IsPast => "Done",
+        AppointmentStatus.Pending => "Pending",
+        AppointmentStatus.Confirmed => "Confirmed",
+        _ => "Cancelled"
+    };
+}

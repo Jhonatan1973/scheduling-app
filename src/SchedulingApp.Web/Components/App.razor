@@ -1,23 +1,30 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Book appointments with professionals — a full-stack .NET 10 portfolio project." />
     <base href="/" />
     <ResourcePreloader />
-    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["SchedulingApp.Web.styles.css"]" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <ImportMap />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="InteractiveServerNoPrerender" />
 </head>
-
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServerNoPrerender" />
+    <div id="boot-splash" class="boot-splash">
+        <div class="spinner"></div>
+        <span>Loading Scheduling App…</span>
+    </div>
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
-
 </html>
+
+@code {
+    // No prerendering: the JWT lives in protected browser storage, which needs JS interop.
+    private static readonly IComponentRenderMode InteractiveServerNoPrerender = new InteractiveServerRenderMode(prerender: false);
+}

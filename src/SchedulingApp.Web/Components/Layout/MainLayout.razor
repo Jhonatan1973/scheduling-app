@@ -1,23 +1,99 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject AppAuthStateProvider Auth
+@inject NavigationManager Navigation
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="app-shell">
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <a class="brand" href="/">
+                <span class="brand-mark">◷</span>
+                <span>Scheduling<strong>App</strong></span>
+            </a>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="@_menuOpen" @onclick="() => _menuOpen = !_menuOpen">
+                <span></span><span></span><span></span>
+            </button>
+
+            <nav class="nav @(_menuOpen ? "open" : null)" @onclick="() => _menuOpen = false">
+                <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">Find a professional</NavLink>
+
+                @if (Auth.IsClient)
+                {
+                    <NavLink class="nav-link" href="/my/appointments" data-testid="nav-my-appointments">My appointments</NavLink>
+                }
+                @if (Auth.IsProfessional)
+                {
+                    <NavLink class="nav-link" href="/pro/schedule" data-testid="nav-schedule">Schedule</NavLink>
+                    <NavLink class="nav-link" href="/pro/availability" data-testid="nav-availability">Availability</NavLink>
+                }
+
+                <div class="nav-spacer"></div>
+
+                @if (!Auth.IsInitialized)
+                {
+                    <span class="nav-muted">…</span>
+                }
+                else if (Auth.User is { } user)
+                {
+                    <span class="user-chip" title="@user.Email">
+                        <span class="avatar">@Initials(user.FullName)</span>
+                        <span class="user-name">@user.FullName</span>
+                        <span class="role-tag">@user.Role</span>
+                    </span>
+                    <button class="btn btn-ghost btn-sm" data-testid="sign-out" @onclick="SignOutAsync">Sign out</button>
+                }
+                else
+                {
+                    <NavLink class="nav-link" href="/login">Sign in</NavLink>
+                    <a class="btn btn-primary btn-sm" href="/register">Create account</a>
+                }
+            </nav>
         </div>
+    </header>
 
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="container main">
+        @Body
     </main>
+
+    <footer class="footer">
+        <div class="container footer-inner">
+            <span>Scheduling App · .NET 10 · Blazor · PostgreSQL</span>
+            <a href="https://github.com/Jhonatan1973/scheduling-app" target="_blank" rel="noopener">Source on GitHub</a>
+        </div>
+    </footer>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
+    An unexpected error has occurred.
     <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    <span class="dismiss">✕</span>
 </div>
+
+@code {
+    private bool _menuOpen;
+
+    protected override void OnInitialized() => Auth.AuthenticationStateChanged += OnAuthChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await Auth.EnsureInitializedAsync();
+    }
+
+    private void OnAuthChanged(Task<Microsoft.AspNetCore.Components.Authorization.AuthenticationState> _) =>
+        InvokeAsync(StateHasChanged);
+
+    private async Task SignOutAsync()
+    {
+        await Auth.SignOutAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private static string Initials(string name) =>
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+
+    public void Dispose() => Auth.AuthenticationStateChanged -= OnAuthChanged;
+}
