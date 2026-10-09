@@ -1,0 +1,63 @@
+# Full stack locally:   docker compose up --build
+#   Web      http://localhost:8081
+#   API      http://localhost:8080/docs
+#   Mailpit  http://localhost:8025   (every email the app sends lands here)
+#
+# Only infrastructure, for `dotnet run` development:
+#   docker compose up -d postgres mailpit
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: scheduling_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d scheduling_app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"   # web UI
+      - "1025:1025"   # SMTP
+
+  api:
+    build:
+      context: .
+      dockerfile: src/SchedulingApp.Api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Database: "Host=postgres;Port=5432;Database=scheduling_app;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}"
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env (see .env.example)}
+      Email__Provider: Smtp
+      Email__Smtp__Host: mailpit
+      Email__Smtp__Port: "1025"
+      Notifications__PublicWebUrl: http://localhost:8081
+      Seed__DemoData: ${SEED_DEMO_DATA:-true}
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: src/SchedulingApp.Web/Dockerfile
+    depends_on:
+      - api
+    environment:
+      Api__BaseUrl: http://api:8080/
+      Web__ShowDemoAccounts: ${SEED_DEMO_DATA:-true}
+    ports:
+      - "8081:8080"
+
+volumes:
+  pgdata:
