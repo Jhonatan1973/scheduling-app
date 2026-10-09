@@ -1,0 +1,32 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+artifacts/
+
+# IDEs
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.user
+*.suo
+*.swp
+
+# Tests
+TestResults/
+coverage/
+*.trx
+playwright-traces/
+playwright-report/
+
+# Secrets / local config
+.env
+appsettings.*.local.json
+*.pfx
+
+# OS
+.DS_Store
+Thumbs.db
