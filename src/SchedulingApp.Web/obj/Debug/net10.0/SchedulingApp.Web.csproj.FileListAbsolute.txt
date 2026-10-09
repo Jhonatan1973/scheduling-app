@@ -1,0 +1,9 @@
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\EmbeddedAttribute.cs
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\ValidatableTypeAttribute.cs
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\SchedulingApp.Web.csproj.AssemblyReference.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\rpswa.dswa.cache.json
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\SchedulingApp.Web.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\SchedulingApp.Web.AssemblyInfoInputs.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\SchedulingApp.Web.AssemblyInfo.cs
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\SchedulingApp.Web.csproj.CoreCompileInputs.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Web\obj\Debug\net10.0\SchedulingApp.Web.MvcApplicationPartsAssemblyInfo.cache

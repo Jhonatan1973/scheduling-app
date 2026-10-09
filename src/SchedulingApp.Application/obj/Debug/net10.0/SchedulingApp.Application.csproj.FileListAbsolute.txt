@@ -1,0 +1,15 @@
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\bin\Debug\net10.0\SchedulingApp.Application.deps.json
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\bin\Debug\net10.0\SchedulingApp.Application.dll
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\bin\Debug\net10.0\SchedulingApp.Application.pdb
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\bin\Debug\net10.0\SchedulingApp.Domain.dll
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\bin\Debug\net10.0\SchedulingApp.Domain.pdb
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\SchedulingApp.Application.csproj.AssemblyReference.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\SchedulingApp.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\SchedulingApp.Application.AssemblyInfoInputs.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\SchedulingApp.Application.AssemblyInfo.cs
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\SchedulingApp.Application.csproj.CoreCompileInputs.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\Scheduli.401F793B.Up2Date
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\SchedulingApp.Application.dll
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\refint\SchedulingApp.Application.dll
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\SchedulingApp.Application.pdb
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Application\obj\Debug\net10.0\ref\SchedulingApp.Application.dll

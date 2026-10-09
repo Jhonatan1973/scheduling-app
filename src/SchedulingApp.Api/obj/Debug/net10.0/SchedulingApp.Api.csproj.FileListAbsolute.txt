@@ -1,0 +1,8 @@
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\SchedulingApp.Api.csproj.AssemblyReference.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\rpswa.dswa.cache.json
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\SchedulingApp.Api.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\SchedulingApp.Api.AssemblyInfoInputs.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\SchedulingApp.Api.AssemblyInfo.cs
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\SchedulingApp.Api.csproj.CoreCompileInputs.cache
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\SchedulingApp.Api.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\jhonatan.silva\Documents\projetos\git\scheduling-app\src\SchedulingApp.Api\obj\Debug\net10.0\SchedulingApp.Api.MvcApplicationPartsAssemblyInfo.cache

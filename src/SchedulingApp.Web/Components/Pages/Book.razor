@@ -1,0 +1,111 @@
+@page "/book"
+@using SchedulingApp.Application.Dtos
+@inject SchedulingApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Book appointment</PageTitle>
+
+<h1>Book an appointment</h1>
+
+@if (!_sessionChecked)
+{
+    <p>Loading...</p>
+}
+else if (!Session.IsAuthenticated)
+{
+    <div class="alert alert-warning">Please <a href="login">sign in</a> as a client to book.</div>
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Professional</label>
+            <select class="form-select" @bind="_selectedProfessionalId">
+                <option value="">Select...</option>
+                @foreach (var professional in _professionals)
+                {
+                    <option value="@professional.Id">@professional.DisplayName — @professional.Specialty</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Date</label>
+            <InputDate @bind-Value="_selectedDate" class="form-control" />
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button class="btn btn-outline-primary w-100" @onclick="LoadSlotsAsync" disabled="@_busy">Load slots</button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <div class="alert alert-info mt-3">@_message</div>
+    }
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        @foreach (var slot in _slots.Where(s => s.IsAvailable))
+        {
+            <button class="btn btn-sm btn-success" disabled="@_busy" @onclick="() => BookSlotAsync(slot)">
+                @slot.StartUtc.ToLocalTime().ToString("HH:mm")
+            </button>
+        }
+    </div>
+}
+
+@code {
+    [Inject] private AuthSession Session { get; set; } = default!;
+
+    private bool _sessionChecked;
+    private bool _busy;
+    private string? _message;
+    private List<ProfessionalDto> _professionals = [];
+    private List<TimeSlotDto> _slots = [];
+    private string _selectedProfessionalId = string.Empty;
+    private DateTime _selectedDate = DateTime.Today.AddDays(1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _professionals = (await Api.GetProfessionalsAsync()).ToList();
+        _sessionChecked = true;
+    }
+
+    private async Task LoadSlotsAsync()
+    {
+        if (!Guid.TryParse(_selectedProfessionalId, out var professionalId))
+        {
+            _message = "Select a professional.";
+            return;
+        }
+
+        _busy = true;
+        _message = null;
+        _slots = (await Api.GetSlotsAsync(professionalId, DateOnly.FromDateTime(_selectedDate))).ToList();
+        _busy = false;
+
+        if (_slots.Count == 0)
+        {
+            _message = "No availability for this date.";
+        }
+    }
+
+    private async Task BookSlotAsync(TimeSlotDto slot)
+    {
+        if (!Guid.TryParse(_selectedProfessionalId, out var professionalId))
+        {
+            return;
+        }
+
+        _busy = true;
+        var appointment = await Api.BookAsync(new CreateAppointmentRequest(professionalId, slot.StartUtc, null));
+        _busy = false;
+
+        if (appointment is null)
+        {
+            _message = "Could not book this slot. It may have been taken.";
+            await LoadSlotsAsync();
+            return;
+        }
+
+        Navigation.NavigateTo("appointments");
+    }
+}

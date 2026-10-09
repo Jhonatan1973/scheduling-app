@@ -1,0 +1,41 @@
+﻿@page "/"
+
+<PageTitle>Scheduling App</PageTitle>
+
+<div class="hero py-5">
+    <h1 class="display-5 fw-semibold">Professional scheduling, built with .NET</h1>
+    <p class="lead text-secondary">
+        Book appointments with verified professionals. Admins manage availability, dashboards, and automated email notifications.
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="book">Book an appointment</a>
+        <a class="btn btn-outline-secondary" href="login">Sign in</a>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Client flow</h5>
+                <p class="card-text">Browse professionals, pick an open slot, and manage your bookings.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Admin dashboard</h5>
+                <p class="card-text">Daily and weekly overview for professionals with real appointment data.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Event-driven emails</h5>
+                <p class="card-text">Booking and cancellation events are processed asynchronously via RabbitMQ.</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,53 @@
+@page "/login"
+@using SchedulingApp.Application.Dtos
+@inject SchedulingApiClient Api
+@inject AuthSession Session
+@inject JwtAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Sign in</PageTitle>
+
+<h1>Sign in</h1>
+
+<EditForm Model="_model" OnValidSubmit="HandleLoginAsync" class="col-md-5">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <InputText @bind-Value="_model.Email" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <InputText @bind-Value="_model.Password" type="password" class="form-control" />
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+    <button class="btn btn-primary" disabled="@_busy">Sign in</button>
+</EditForm>
+
+<p class="mt-3">No account? <a href="register">Create one</a>.</p>
+
+@code {
+    private readonly LoginRequest _model = new(string.Empty, string.Empty);
+    private string? _error;
+    private bool _busy;
+
+    private async Task HandleLoginAsync()
+    {
+        _busy = true;
+        _error = null;
+
+        var response = await Api.LoginAsync(_model);
+        if (response is null)
+        {
+            _error = "Invalid email or password.";
+            _busy = false;
+            return;
+        }
+
+        Session.Set(response);
+        AuthStateProvider.NotifyChanged();
+        Navigation.NavigateTo(response.Role == Domain.Constants.Roles.Admin ? "admin/dashboard" : "appointments");
+    }
+}

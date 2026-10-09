@@ -1,0 +1,56 @@
+@page "/register"
+@using SchedulingApp.Application.Dtos
+@using SchedulingApp.Domain.Constants
+@inject SchedulingApiClient Api
+@inject AuthSession Session
+@inject JwtAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Create account</PageTitle>
+
+<h1>Create client account</h1>
+
+<EditForm Model="_model" OnValidSubmit="HandleRegisterAsync" class="col-md-5">
+    <div class="mb-3">
+        <label class="form-label">Full name</label>
+        <InputText @bind-Value="_model.FullName" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <InputText @bind-Value="_model.Email" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <InputText @bind-Value="_model.Password" type="password" class="form-control" />
+        <div class="form-text">Minimum 8 characters.</div>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+    <button class="btn btn-primary" disabled="@_busy">Register</button>
+</EditForm>
+
+@code {
+    private readonly RegisterRequest _model = new(string.Empty, string.Empty, string.Empty, Roles.Client);
+    private string? _error;
+    private bool _busy;
+
+    private async Task HandleRegisterAsync()
+    {
+        _busy = true;
+        _error = null;
+
+        var response = await Api.RegisterAsync(_model);
+        if (response is null)
+        {
+            _error = "Could not create account. Check your details.";
+            _busy = false;
+            return;
+        }
+
+        Session.Set(response);
+        AuthStateProvider.NotifyChanged();
+        Navigation.NavigateTo("book");
+    }
+}

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SchedulingApp.Api/SchedulingApp.Api.csproj" />
+    <Project Path="src/SchedulingApp.Application/SchedulingApp.Application.csproj" />
+    <Project Path="src/SchedulingApp.Domain/SchedulingApp.Domain.csproj" />
+    <Project Path="src/SchedulingApp.Infrastructure/SchedulingApp.Infrastructure.csproj" />
+    <Project Path="src/SchedulingApp.NotificationsWorker/SchedulingApp.NotificationsWorker.csproj" />
+    <Project Path="src/SchedulingApp.Web/SchedulingApp.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SchedulingApp.IntegrationTests/SchedulingApp.IntegrationTests.csproj" />
+    <Project Path="tests/SchedulingApp.UnitTests/SchedulingApp.UnitTests.csproj" />
+  </Folder>
+</Solution>

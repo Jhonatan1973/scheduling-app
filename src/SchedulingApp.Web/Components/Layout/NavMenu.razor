@@ -1,0 +1,56 @@
+﻿@using SchedulingApp.Web.Services
+@inject AuthSession Session
+@inject JwtAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-semibold" href="">Scheduling App</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">Home</NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="book">Book</NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="appointments">Appointments</NavLink>
+        </div>
+        @if (Session.IsAdmin)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/dashboard">Dashboard</NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/availability">Availability</NavLink>
+            </div>
+        }
+        <div class="nav-item px-3 mt-3">
+            @if (Session.IsAuthenticated)
+            {
+                <div class="small text-secondary mb-2">@Session.Current!.FullName (@Session.Current.Role)</div>
+                <button class="btn btn-sm btn-outline-secondary w-100" @onclick="Logout">Sign out</button>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="login">Sign in</NavLink>
+                <NavLink class="nav-link" href="register">Register</NavLink>
+            }
+        </div>
+    </nav>
+</div>
+
+@code {
+    private void Logout()
+    {
+        Session.Clear();
+        AuthStateProvider.NotifyChanged();
+        Navigation.NavigateTo("/");
+    }
+}

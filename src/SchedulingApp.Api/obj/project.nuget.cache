@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "dgSpecHash": "eT2JtpnkrzA=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\jhonatan.silva\\Documents\\projetos\\git\\scheduling-app\\src\\SchedulingApp.Api\\SchedulingApp.Api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\aspnetcore.healthchecks.npgsql\\9.0.0\\aspnetcore.healthchecks.npgsql.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\aspnetcore.healthchecks.rabbitmq\\9.0.0\\aspnetcore.healthchecks.rabbitmq.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\aspnetcore.healthchecks.redis\\9.0.0\\aspnetcore.healthchecks.redis.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\bouncycastle.cryptography\\2.5.0\\bouncycastle.cryptography.2.5.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\mailkit\\4.9.0\\mailkit.4.9.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\masstransit\\8.3.7\\masstransit.8.3.7.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\masstransit.abstractions\\8.3.7\\masstransit.abstractions.8.3.7.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\masstransit.rabbitmq\\8.3.7\\masstransit.rabbitmq.8.3.7.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.aspnetcore.authentication.jwtbearer\\10.0.0\\microsoft.aspnetcore.authentication.jwtbearer.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.aspnetcore.identity.entityframeworkcore\\10.0.0\\microsoft.aspnetcore.identity.entityframeworkcore.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.aspnetcore.openapi\\10.0.12\\microsoft.aspnetcore.openapi.10.0.12.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.entityframeworkcore\\10.0.0\\microsoft.entityframeworkcore.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.entityframeworkcore.abstractions\\10.0.0\\microsoft.entityframeworkcore.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.entityframeworkcore.analyzers\\10.0.0\\microsoft.entityframeworkcore.analyzers.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.entityframeworkcore.relational\\10.0.0\\microsoft.entityframeworkcore.relational.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.extensions.caching.stackexchangeredis\\10.0.0\\microsoft.extensions.caching.stackexchangeredis.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.extensions.dependencymodel\\9.0.0\\microsoft.extensions.dependencymodel.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.identitymodel.abstractions\\8.3.0\\microsoft.identitymodel.abstractions.8.3.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.identitymodel.jsonwebtokens\\8.3.0\\microsoft.identitymodel.jsonwebtokens.8.3.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.identitymodel.logging\\8.3.0\\microsoft.identitymodel.logging.8.3.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.identitymodel.protocols\\8.0.1\\microsoft.identitymodel.protocols.8.0.1.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.identitymodel.protocols.openidconnect\\8.0.1\\microsoft.identitymodel.protocols.openidconnect.8.0.1.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.identitymodel.tokens\\8.3.0\\microsoft.identitymodel.tokens.8.3.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\microsoft.openapi\\2.12.0\\microsoft.openapi.2.12.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\mimekit\\4.9.0\\mimekit.4.9.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\npgsql\\10.0.0\\npgsql.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\npgsql.entityframeworkcore.postgresql\\10.0.0\\npgsql.entityframeworkcore.postgresql.10.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\pipelines.sockets.unofficial\\2.2.8\\pipelines.sockets.unofficial.2.2.8.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\rabbitmq.client\\7.1.1\\rabbitmq.client.7.1.1.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog\\4.2.0\\serilog.4.2.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.aspnetcore\\9.0.0\\serilog.aspnetcore.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.extensions.hosting\\9.0.0\\serilog.extensions.hosting.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.extensions.logging\\9.0.0\\serilog.extensions.logging.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.formatting.compact\\3.0.0\\serilog.formatting.compact.3.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.settings.configuration\\9.0.0\\serilog.settings.configuration.9.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.sinks.console\\6.0.0\\serilog.sinks.console.6.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.sinks.debug\\3.0.0\\serilog.sinks.debug.3.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\serilog.sinks.file\\6.0.0\\serilog.sinks.file.6.0.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\stackexchange.redis\\2.7.27\\stackexchange.redis.2.7.27.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\system.identitymodel.tokens.jwt\\8.3.0\\system.identitymodel.tokens.jwt.8.3.0.nupkg.sha512",
+    "C:\\Users\\jhonatan.silva\\AppData\\Local\\Temp\\cursor-sandbox-cache\\eabaa9127cee8b7b271193f9580fc5b5\\nuget\\system.security.cryptography.pkcs\\8.0.1\\system.security.cryptography.pkcs.8.0.1.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'MailKit' 4.9.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
+      "projectPath": "C:\\Users\\jhonatan.silva\\Documents\\projetos\\git\\scheduling-app\\src\\SchedulingApp.Api\\SchedulingApp.Api.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\jhonatan.silva\\Documents\\projetos\\git\\scheduling-app\\src\\SchedulingApp.Api\\SchedulingApp.Api.csproj",
+      "libraryId": "MailKit",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'MimeKit' 4.9.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-g7hc-96xr-gvvx",
+      "projectPath": "C:\\Users\\jhonatan.silva\\Documents\\projetos\\git\\scheduling-app\\src\\SchedulingApp.Api\\SchedulingApp.Api.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\jhonatan.silva\\Documents\\projetos\\git\\scheduling-app\\src\\SchedulingApp.Api\\SchedulingApp.Api.csproj",
+      "libraryId": "MimeKit",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}

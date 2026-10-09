@@ -1,0 +1,62 @@
+@page "/admin/dashboard"
+@using SchedulingApp.Application.Dtos
+@inject SchedulingApiClient Api
+@inject AuthSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>Admin dashboard</PageTitle>
+
+<h1>Professional dashboard</h1>
+
+@if (!Session.IsAdmin)
+{
+    <div class="alert alert-warning">Admin access required.</div>
+}
+else if (_summary is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-secondary">Today</div>
+                    <div class="display-6">@_summary.TodayCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-secondary">Next 7 days</div>
+                    <div class="display-6">@_summary.WeekCount</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="h4">Upcoming</h2>
+    <ul class="list-group">
+        @foreach (var item in _summary.Upcoming)
+        {
+            <li class="list-group-item d-flex justify-content-between">
+                <span>@item.ClientName — @item.StartUtc.ToLocalTime():g</span>
+                <span class="badge text-bg-light border">@item.Status</span>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private DashboardSummaryDto? _summary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Session.IsAdmin)
+        {
+            _summary = await Api.GetDashboardAsync();
+        }
+    }
+}
