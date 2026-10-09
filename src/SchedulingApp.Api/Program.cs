@@ -1,102 +1,67 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using SchedulingApp.Application.Options;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using SchedulingApp.Api.Endpoints;
+using SchedulingApp.Api.Infrastructure;
+using SchedulingApp.Application;
 using SchedulingApp.Infrastructure;
-using Serilog;
+using SchedulingApp.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((context, services, configuration) =>
-    configuration
-        .ReadFrom.Configuration(context.Configuration)
-        .ReadFrom.Services(services)
-        .Enrich.FromLogContext()
-        .WriteTo.Console());
+// Render/Railway inject the port through $PORT.
+if (Environment.GetEnvironmentVariable("PORT") is { Length: > 0 } port)
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration)
+    .AddJwtAuthentication(builder.Configuration);
+
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddOpenApi();
+
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
+
+var authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitPerMinute", 20);
+builder.Services.AddRateLimiter(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Scheduling App API", Version = "v1" });
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        In = ParameterLocation.Header,
-        Description = "JWT Authorization header using the Bearer scheme.",
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT"
-    });
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            Array.Empty<string>()
-        }
-    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = authPermitLimit, Window = TimeSpan.FromMinutes(1) }));
 });
 
-var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-    ?? throw new InvalidOperationException("Jwt configuration is missing.");
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwt.Issuer,
-            ValidAudience = jwt.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret)),
-            NameClaimType = System.Security.Claims.ClaimTypes.Name,
-            RoleClaimType = System.Security.Claims.ClaimTypes.Role
-        };
-
-        options.MapInboundClaims = false;
-    });
-
-builder.Services.AddAuthorization();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Web", policy =>
-        policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5280"])
-            .AllowAnyHeader()
-            .AllowAnyMethod());
-});
-
-builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
-    .AddRedis(builder.Configuration.GetConnectionString("Redis")!)
-    .AddRabbitMQ(rabbitConnectionString: builder.Configuration.GetConnectionString("RabbitMq")!);
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+    policy.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [])
+        .AllowAnyHeader()
+        .AllowAnyMethod()));
 
 var app = builder.Build();
 
-await DependencyInjection.SeedAsync(app.Services);
+if (app.Configuration.GetValue("Database:InitializeOnStartup", true))
+    await DatabaseInitializer.InitializeAsync(app.Services);
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseSerilogRequestLogging();
-app.UseHttpsRedirection();
-app.UseCors("Web");
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+
+app.MapOpenApi();
+app.MapGet("/docs", () => Results.Content(SwaggerUi.Html, "text/html")).ExcludeFromDescription();
+app.MapGet("/", () => Results.Redirect("/docs")).ExcludeFromDescription();
 app.MapHealthChecks("/health");
+
+app.MapAuthEndpoints();
+app.MapProfessionalEndpoints();
+app.MapAppointmentEndpoints();
 
 app.Run();
 
+/// <summary>Exposed for WebApplicationFactory in integration tests.</summary>
 public partial class Program;
