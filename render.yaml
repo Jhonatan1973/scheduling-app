@@ -1,0 +1,43 @@
+# Render Blueprint: New + > Blueprint > select this repository.
+# Creates a free PostgreSQL database, the API and the Blazor front-end (both Docker).
+# If the service names are taken, rename them and update the two URLs below.
+databases:
+  - name: scheduling-db
+    plan: free
+    databaseName: scheduling_app
+    user: scheduling
+
+services:
+  - type: web
+    name: scheduling-app-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./src/SchedulingApp.Api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ConnectionStrings__Database
+        fromDatabase:
+          name: scheduling-db
+          property: connectionString
+      - key: Jwt__Secret
+        generateValue: true
+      - key: Seed__DemoData
+        value: "true"
+      - key: Email__Provider
+        value: Log          # switch to Brevo + Email__Brevo__ApiKey to send real emails
+      - key: Notifications__PublicWebUrl
+        value: https://scheduling-app-web.onrender.com
+
+  - type: web
+    name: scheduling-app-web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./src/SchedulingApp.Web/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: Api__BaseUrl
+        value: https://scheduling-app-api.onrender.com/
+      - key: Web__ShowDemoAccounts
+        value: "true"
