@@ -12,7 +12,7 @@ namespace SchedulingApp.IntegrationTests;
 [Collection(ApiCollection.Name)]
 public class BookingFlowTests(ApiFactory factory)
 {
-    [Fact]
+    [IntegrationFact]
     public async Task Full_flow_book_confirm_cancel_with_emails()
     {
         var (pro, proAuth) = await RegisterAsync(factory, UserRole.Professional, "Flow Pro");
@@ -63,7 +63,7 @@ public class BookingFlowTests(ApiFactory factory)
         Assert.Contains(flowEmails, e => e.ToEmail == proAuth.User.Email && e.TextBody.Contains("Travelling"));
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Same_slot_cannot_be_booked_twice()
     {
         var (pro, proAuth) = await RegisterAsync(factory, UserRole.Professional);
@@ -79,7 +79,7 @@ public class BookingFlowTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Concurrent_requests_for_the_same_slot_produce_exactly_one_booking()
     {
         var (pro, proAuth) = await RegisterAsync(factory, UserRole.Professional);
@@ -94,7 +94,7 @@ public class BookingFlowTests(ApiFactory factory)
             r => Assert.Equal(HttpStatusCode.Conflict, r.StatusCode));
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Cannot_book_outside_working_hours()
     {
         var (pro, proAuth) = await RegisterAsync(factory, UserRole.Professional);
@@ -107,7 +107,7 @@ public class BookingFlowTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Roles_are_enforced()
     {
         var (pro, proAuth) = await RegisterAsync(factory, UserRole.Professional);
@@ -125,7 +125,7 @@ public class BookingFlowTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.Forbidden, clientAvailability.StatusCode);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Professionals_cannot_touch_other_professionals_appointments()
     {
         var (pro, proAuth) = await RegisterAsync(factory, UserRole.Professional);
@@ -142,7 +142,7 @@ public class BookingFlowTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.NotFound, confirm.StatusCode);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Overlapping_availability_is_rejected()
     {
         var (pro, _) = await RegisterAsync(factory, UserRole.Professional);

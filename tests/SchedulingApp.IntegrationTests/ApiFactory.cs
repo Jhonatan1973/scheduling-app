@@ -12,16 +12,15 @@ namespace SchedulingApp.IntegrationTests;
 /// <summary>Boots the real API against a throw-away PostgreSQL container (requires Docker).</summary>
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:16-alpine")
-        .Build();
+    private PostgreSqlContainer? _postgres;
+    private string _connectionString = string.Empty;
 
     public CapturingEmailSender Emails { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.UseSetting("ConnectionStrings:Database", _postgres.GetConnectionString());
+        builder.UseSetting("ConnectionStrings:Database", _connectionString);
         builder.UseSetting("Jwt:Secret", "integration-tests-only-secret-0123456789abcdef");
         builder.UseSetting("Seed:DemoData", "false");
         builder.UseSetting("Email:Provider", "Log");
@@ -35,12 +34,29 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         });
     }
 
-    public Task InitializeAsync() => _postgres.StartAsync();
+    public async Task InitializeAsync()
+    {
+        // 1) External PostgreSQL (no Docker): INTEGRATION_DB="Host=localhost;Database=scheduling_tests;Username=postgres;Password=..."
+        if (TestEnvironment.ExternalConnectionString is { } external)
+        {
+            _connectionString = external;
+            return;
+        }
+
+        // 2) Docker available: throw-away container
+        if (TestEnvironment.DockerAvailable)
+        {
+            _postgres = new PostgreSqlBuilder().WithImage("postgres:16-alpine").Build();
+            await _postgres.StartAsync();
+            _connectionString = _postgres.GetConnectionString();
+        }
+    }
 
     public new async Task DisposeAsync()
     {
         await base.DisposeAsync();
-        await _postgres.DisposeAsync();
+        if (_postgres is not null)
+            await _postgres.DisposeAsync();
     }
 }
 

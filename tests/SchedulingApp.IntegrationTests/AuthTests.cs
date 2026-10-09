@@ -9,7 +9,7 @@ namespace SchedulingApp.IntegrationTests;
 [Collection(ApiCollection.Name)]
 public class AuthTests(ApiFactory factory)
 {
-    [Fact]
+    [IntegrationFact]
     public async Task Registers_a_client_and_logs_in()
     {
         var client = factory.CreateClient();
@@ -28,7 +28,7 @@ public class AuthTests(ApiFactory factory)
         Assert.Null(auth.User.ProfessionalId);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Registering_a_professional_creates_the_professional_profile()
     {
         var (client, auth) = await RegisterAsync(factory, UserRole.Professional, "Bruno Barber");
@@ -41,7 +41,7 @@ public class AuthTests(ApiFactory factory)
         Assert.Contains("Bruno Barber", list);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Rejects_wrong_password()
     {
         var (_, auth) = await RegisterAsync(factory, UserRole.Client);
@@ -51,7 +51,7 @@ public class AuthTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Rejects_duplicate_email_with_conflict()
     {
         var (_, auth) = await RegisterAsync(factory, UserRole.Client);
@@ -62,7 +62,7 @@ public class AuthTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Returns_validation_problem_details_for_invalid_input()
     {
         var response = await factory.CreateClient().PostAsJsonAsync("api/auth/register",
@@ -74,7 +74,7 @@ public class AuthTests(ApiFactory factory)
         Assert.Contains("specialty", body);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Protected_endpoints_require_a_token()
     {
         var response = await factory.CreateClient().GetAsync("api/appointments/mine");

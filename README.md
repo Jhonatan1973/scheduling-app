@@ -86,8 +86,24 @@ dotnet run --project src/SchedulingApp.Api  # http://localhost:5251/docs
 dotnet run --project src/SchedulingApp.Web  # http://localhost:5126
 ```
 
-In `Development` the API uses a local-only JWT key, seeds the demo accounts and sends emails to Mailpit
-(http://localhost:8025).
+In `Development` the API uses a local-only JWT key, seeds the demo accounts and prints emails to the console
+(set `Email__Provider=Smtp` to deliver them to Mailpit at http://localhost:8025).
+
+### Option C – without Docker
+
+Docker is optional. You only need a PostgreSQL database:
+
+1. Install PostgreSQL for Windows (https://www.postgresql.org/download/windows/) **or** create a free database on
+   [Neon](https://neon.tech) and copy its connection string.
+2. Point the API to it (stored outside the repo with user-secrets):
+   ```bash
+   dotnet user-secrets --project src/SchedulingApp.Api set "ConnectionStrings:Database" "Host=localhost;Port=5432;Database=scheduling_app;Username=postgres;Password=<your password>"
+   ```
+   (Neon URLs like `postgresql://user:pass@host/db?sslmode=require` are accepted as-is.)
+3. Run the API and the Web app as in option B. The database and demo accounts are created on start-up.
+
+In `Development`, emails are written to the API console (`Email:Provider = Log`). To see them in an inbox, run
+Mailpit and set `Email__Provider=Smtp`.
 
 ### Database migrations
 
@@ -104,8 +120,18 @@ Once a migration exists, the API applies migrations on start-up instead of `Ensu
 
 ```bash
 dotnet test tests/SchedulingApp.UnitTests           # fast, no dependencies
-dotnet test tests/SchedulingApp.IntegrationTests    # needs Docker (Testcontainers starts PostgreSQL)
+dotnet test tests/SchedulingApp.IntegrationTests    # needs PostgreSQL: Docker (Testcontainers) or INTEGRATION_DB
 ```
+
+Integration tests run against a real PostgreSQL. With Docker running, Testcontainers starts one automatically.
+Without Docker, point them at an existing server (a dedicated database is created/used):
+
+```powershell
+$env:INTEGRATION_DB="Host=localhost;Port=5432;Database=scheduling_tests;Username=postgres;Password=<your password>"
+dotnet test tests/SchedulingApp.IntegrationTests
+```
+
+If neither is available the tests are **skipped** (not failed); CI always runs them.
 
 End-to-end tests run against a running app and are skipped unless `E2E_BASE_URL` is set:
 

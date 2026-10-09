@@ -5,7 +5,7 @@ namespace SchedulingApp.IntegrationTests;
 [Collection(ApiCollection.Name)]
 public class HealthTests(ApiFactory factory)
 {
-    [Fact]
+    [IntegrationFact]
     public async Task Health_endpoint_reports_database_connectivity()
     {
         var response = await factory.CreateClient().GetAsync("/health");
@@ -13,7 +13,7 @@ public class HealthTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
+    [IntegrationFact]
     public async Task Openapi_document_is_published()
     {
         var json = await factory.CreateClient().GetStringAsync("/openapi/v1.json");
